@@ -8,19 +8,34 @@ import com.example.differencemvpandmoxy.dto.User
 import com.example.differencemvpandmoxy.model.UserService
 import com.example.differencemvpandmoxy.model.UserService.Companion.FIRST_PAGE
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainViewModel(
     private val userService: UserService
 ) : ViewModel() {
 
+    sealed class RVUpdater(val users: List<User>) {
+        class UpdateAll(users: List<User>): RVUpdater (users)
+        class AddAll(users: List<User>): RVUpdater (users)
+    }
 
     //region Observers
-    private val userList = MutableLiveData<List<User>>()
-    val observerUserList: LiveData<List<User>> = userList
+    private val userList = MutableLiveData<RVUpdater>()
+    val observerUserList: LiveData<RVUpdater> = userList
 
     private val chosenUser = MutableLiveData<User>()
-    val observerChosenUser = chosenUser
+    val observerChosenUser: LiveData<User> = chosenUser
+
+    private val userList2 = MutableStateFlow(listOf<User>())
+    val observerUserList2 = userList2.asStateFlow()
+
+    private val user2 = MutableSharedFlow<User>()
+    val observerUser2 = user2.asSharedFlow()
     //endregion
 
     init {
@@ -31,7 +46,15 @@ class MainViewModel(
     fun loadUsers(page: Int) {
         viewModelScope.launch(Dispatchers.IO) {
             val users = userService.getUsers(page)
-            userList.postValue(users)
+
+            if(page == FIRST_PAGE) {
+                userList.postValue(RVUpdater.UpdateAll(users))
+            } else {
+                userList.postValue(RVUpdater.AddAll(users))
+            }
+            withContext(Dispatchers.Main) {
+                userList2.value = users
+            }
         }
     }
 

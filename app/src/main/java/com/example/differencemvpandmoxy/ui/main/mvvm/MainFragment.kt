@@ -7,11 +7,17 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.differencemvpandmoxy.databinding.MainFragmentBinding
+import com.example.differencemvpandmoxy.dto.User
 import com.example.differencemvpandmoxy.model.MockUserService
 import com.example.differencemvpandmoxy.recycler_view.user_list.UserListRVAdapter
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
 
 class MainFragment : Fragment() {
 
@@ -58,6 +64,7 @@ class MainFragment : Fragment() {
     private fun prepareUI() {
         setupRV()
         setupObservers()
+//        observeFlows()
     }
     //endregion
 
@@ -77,12 +84,27 @@ class MainFragment : Fragment() {
         observerChosenUser.observe(this@MainFragment.viewLifecycleOwner) {
             Toast.makeText(requireContext(), it.toString(), Toast.LENGTH_SHORT).show()
         }
+        (observerChosenUser as MutableLiveData<List<User>>).postValue(listOf())
+        (observerUserList2 as MutableStateFlow<List<User>>).value = listOf()
 
         observerUserList.observe(this@MainFragment.viewLifecycleOwner) {
-            userAdapter.updateUsers(it)
+            if (it is MainViewModel.RVUpdater.UpdateAll) {
+
+                userAdapter.updateUsers(it.users)
+            } else {
+                userAdapter.addUsers(it.users)
+            }
         }
     }
 
+    private fun observeFlows() {
+
+        this@MainFragment.viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+            vm.observerUserList2.collectLatest {
+                userAdapter.updateUsers(it)
+            }
+        }
+    }
     //endregion
 
 }
