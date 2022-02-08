@@ -4,6 +4,7 @@ import androidx.annotation.IntRange
 import com.example.differencemvpandmoxy.dto.User
 import com.example.differencemvpandmoxy.model.UserService.Companion.FIRST_PAGE
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 
 class MockUserService : UserService {
 
@@ -118,5 +119,9 @@ class MockUserService : UserService {
         val fromIndex = page * USER_PER_PAGE - USER_PER_PAGE
         val toIndex = (page * USER_PER_PAGE) % USERS.size
         return USERS.subList(fromIndex, toIndex)
+    }
+
+    override fun deleteUser(user: User): Flow<Int> {
+
     }
 }

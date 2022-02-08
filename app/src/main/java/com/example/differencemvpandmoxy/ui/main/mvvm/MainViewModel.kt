@@ -7,21 +7,19 @@ import androidx.lifecycle.viewModelScope
 import com.example.differencemvpandmoxy.dto.User
 import com.example.differencemvpandmoxy.model.UserService
 import com.example.differencemvpandmoxy.model.UserService.Companion.FIRST_PAGE
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import java.lang.Exception
+import java.lang.IllegalArgumentException
+import java.net.ConnectException
 
 class MainViewModel(
     private val userService: UserService
 ) : ViewModel() {
 
     sealed class RVUpdater(val users: List<User>) {
-        class UpdateAll(users: List<User>): RVUpdater (users)
-        class AddAll(users: List<User>): RVUpdater (users)
+        class UpdateAll(users: List<User>) : RVUpdater(users)
+        class AddAll(users: List<User>) : RVUpdater(users)
     }
 
     //region Observers
@@ -44,22 +42,29 @@ class MainViewModel(
 
     //region Actions
     fun loadUsers(page: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val users = userService.getUsers(page)
 
-            if(page == FIRST_PAGE) {
-                userList.postValue(RVUpdater.UpdateAll(users))
-            } else {
-                userList.postValue(RVUpdater.AddAll(users))
-            }
-            withContext(Dispatchers.Main) {
-                userList2.value = users
-            }
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { userService.getUsers(page) }
+                .onSuccess {
+                    if (page == FIRST_PAGE) {
+                        userList.postValue(RVUpdater.UpdateAll(it))
+                        withContext(Dispatchers.Main) { userList2.value = it }
+                    } else {
+                        userList.postValue(RVUpdater.AddAll(it))
+                    }
+                }
+                .onFailure {
+
+                }
+
+
         }
+
+
     }
 
     fun onUserClicked(user: User) {
-        chosenUser.postValue(user)
+//        chosenUser.postValue(user)
     }
     //endregion
 

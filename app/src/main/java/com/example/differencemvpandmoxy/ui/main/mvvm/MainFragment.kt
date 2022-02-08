@@ -15,9 +15,11 @@ import com.example.differencemvpandmoxy.databinding.MainFragmentBinding
 import com.example.differencemvpandmoxy.dto.User
 import com.example.differencemvpandmoxy.model.MockUserService
 import com.example.differencemvpandmoxy.recycler_view.user_list.UserListRVAdapter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 class MainFragment : Fragment() {
 
@@ -99,8 +101,11 @@ class MainFragment : Fragment() {
 
     private fun observeFlows() {
 
-        this@MainFragment.viewLifecycleOwner.lifecycleScope.launchWhenStarted {
-            vm.observerUserList2.collectLatest {
+        this.lifecycleScope
+
+
+        this.viewLifecycleOwner.lifecycleScope.launchWhenStarted {
+            vm.observerUserList2.collectLatest{
                 userAdapter.updateUsers(it)
             }
         }
